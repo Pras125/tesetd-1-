@@ -17,6 +17,7 @@ const ExamPage = () => {
     title: string;
     duration_minutes: number;
   } | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
 
   useEffect(() => {
     if (testId) {
@@ -103,42 +104,72 @@ const ExamPage = () => {
     };
   }, [navigate]);
 
-  const handleSetupComplete = () => {
+  const handleSetupComplete = (stream: MediaStream | null) => {
+    setCameraStream(stream);
     setIsSetupComplete(true);
     setIsExamStarted(true);
   };
 
   const handleTimeUp = async () => {
     setIsExamStarted(false);
-    
-    // Submit the exam
     try {
       const studentId = sessionStorage.getItem("studentId");
       if (!studentId || !testId) return;
-
       const { error } = await supabase
         .from("test_sessions")
-        .insert([{
-          test_id: testId,
-          student_id: studentId,
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        }]);
-
+        .insert([
+          {
+            test_id: testId,
+            student_id: studentId,
+            started_at: new Date().toISOString(),
+            completed_at: new Date().toISOString(),
+          },
+        ]);
       if (error) throw error;
-
-      // Mark student as having taken the test
       await supabase
         .from("students")
         .update({ has_taken_test: true })
         .eq("id", studentId);
-
       toast({
         title: "Success",
         description: "Your exam has been submitted successfully",
       });
+      navigate('/test-complete');
+    } catch (error) {
+      console.error("Error submitting exam:", error);
+      toast({
+        title: "Error",
+        description: "Failed to submit exam. Please contact support.",
+        variant: "destructive",
+      });
+    }
+  };
 
-      navigate('/');
+  const handleSubmit = async () => {
+    setIsExamStarted(false);
+    try {
+      const studentId = sessionStorage.getItem("studentId");
+      if (!studentId || !testId) return;
+      const { error } = await supabase
+        .from("test_sessions")
+        .insert([
+          {
+            test_id: testId,
+            student_id: studentId,
+            started_at: new Date().toISOString(),
+            completed_at: new Date().toISOString(),
+          },
+        ]);
+      if (error) throw error;
+      await supabase
+        .from("students")
+        .update({ has_taken_test: true })
+        .eq("id", studentId);
+      toast({
+        title: "Success",
+        description: "Your exam has been submitted successfully",
+      });
+      navigate('/test-complete');
     } catch (error) {
       console.error("Error submitting exam:", error);
       toast({
@@ -166,6 +197,24 @@ const ExamPage = () => {
       {isExamStarted && (
         <>
           <ExamTimer duration={testInfo.duration_minutes} onTimeUp={handleTimeUp} />
+          
+          {/* Camera Feed */}
+          {cameraStream && (
+            <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-2 z-50">
+              <video
+                autoPlay
+                playsInline
+                muted
+                ref={videoEl => {
+                  if (videoEl && cameraStream) {
+                    videoEl.srcObject = cameraStream;
+                  }
+                }}
+                className="w-48 h-36 rounded-lg border-2 border-green-500"
+              />
+              <div className="text-xs text-gray-600 text-center mt-1">Camera Active</div>
+            </div>
+          )}
           
           {/* Display warnings if any */}
           {warnings.length > 0 && (
@@ -217,6 +266,16 @@ const ExamPage = () => {
                     </label>
                   </div>
                 </div>
+              </div>
+              {/* Submit Button */}
+              <div className="mt-8 flex justify-end">
+                <button
+                  onClick={handleSubmit}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  disabled={!isExamStarted}
+                >
+                  Submit Test
+                </button>
               </div>
             </div>
           </div>

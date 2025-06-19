@@ -3,7 +3,7 @@ import { useToast } from '@/hooks/use-toast';
 import { monitoringService } from '../services/monitoringService';
 
 interface ExamSecuritySetupProps {
-  onSetupComplete: () => void;
+  onSetupComplete: (cameraStream: MediaStream | null) => void;
 }
 
 const ExamSecuritySetup: React.FC<ExamSecuritySetupProps> = ({ onSetupComplete }) => {
@@ -103,8 +103,8 @@ const ExamSecuritySetup: React.FC<ExamSecuritySetupProps> = ({ onSetupComplete }
   }
 
   function confirmEnvironment() {
-    // Start the exam
-    onSetupComplete();
+    // Start the exam and pass the camera stream
+    onSetupComplete(streamRef.current);
   }
 
   const currentStepData = steps[currentStep - 1];
