@@ -1,7 +1,7 @@
 import { Socket, io } from 'socket.io-client';
 
 // Define the WebSocket URL with fallback
-const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL || 'wss://latest-exam-dashboard.vercel.app';
+const WEBSOCKET_URL = import.meta.env.VITE_WEBSOCKET_URL || 'wss://https://tesetd-1-p5pt.vercel.app/';
 
 interface MonitoringService {
   connect: () => void;
